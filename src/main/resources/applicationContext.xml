@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+ xmlns:context="http://www.springframework.org/schema/context"
+ xmlns:amq="http://activemq.apache.org/schema/core"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="
+   http://www.springframework.org/schema/beans
+   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+   http://www.springframework.org/schema/context
+   http://www.springframework.org/schema/context/spring-context-3.0.xsd
+   http://activemq.apache.org/schema/core 
+   http://activemq.apache.org/schema/core/activemq-core.xsd">
+ 
+<!--   <context:component-scan base-package="be.stehey.foxy.backtester" /> -->
+  
+  <!-- Embedded ActiveMQ Broker -->
+  <amq:broker useJmx="false" persistent="false">
+    <amq:transportConnectors>
+      <amq:transportConnector uri="tcp://localhost:0" />
+    </amq:transportConnectors>
+  </amq:broker>
+  
+  <!-- JMS ActiveMQ Connection Factory -->
+  <bean id="jmsActiveMQFactory" class="org.apache.activemq.pool.PooledConnectionFactory">
+    <property name="connectionFactory">
+      <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="vm://localhost"/>
+      </bean>
+    </property>
+  </bean>
+  
+  <amq:queue id="defaultDestination"  physicalName="org.apache.activemq.spring.Test.spring.embedded"/>
+
+  <!-- Spring JMS Template for ActiveMQ -->
+  <bean id="jmsActiveMQTemplate" class="org.springframework.jms.core.JmsTemplate">
+    <property name="connectionFactory">
+      <ref bean="jmsActiveMQFactory"/>
+    </property>
+    <property name="defaultDestination" ref="defaultDestination"/>
+  </bean>
+ 
+  <!-- BEANS -->
+  <bean id="simulationStrategy" class="be.stehey.foxy.backtester.model.SimulationStrategy"/>
+  
+  <bean id="datasetManager" class="be.stehey.foxy.backtester.manager.DatasetManager">
+  	<!-- property name="datasetFileName" value="EURUSD_test_data.csv"/ -->
+  	<property name="datasetFileName" value="EURUSD_Candlestick_1_m_BID_01.01.2010-31.12.2010.csv"/>
+  	<property name="jmsTemplate" ref="jmsActiveMQTemplate"/>
+  	<property name="jmsQueueName" value="BT01_0001"/>
+  </bean>
+  
+  <bean id="simulationPortfolio" class="be.stehey.foxy.backtester.model.SimulationPortfolio">
+  	<property name="initialCapital" value="100000"/>
+  </bean>
+  
+  <bean id="backTestRunner" class="be.stehey.foxy.backtester.BackTestRunner">
+  	<property name="datasetManager" ref="datasetManager"/>
+  	<property name="strategy" ref="simulationStrategy"/>
+  	<property name="portfolio" ref="simulationPortfolio"/>
+  </bean>
+  
+  
+</beans>

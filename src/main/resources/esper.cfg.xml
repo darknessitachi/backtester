@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<esper-configuration>
+  <!-- Sample configuration for an input/output adapter loader -->
+  <plugin-loader name="MyLoader" class-name="com.espertech.esperio.SpringContextLoader">
+    <init-arg name="classpath-app-context" value="applicationContext.xml" />
+  </plugin-loader>
+  <event-type name="BT1_001">
+    <java-util-map>
+      <map-property name="timestamp" class="long"/>
+      <map-property name="open" class="java.math.BigDecimal"/>
+      <map-property name="high" class="java.math.BigDecimal"/>
+      <map-property name="low" class="java.math.BigDecimal"/>
+      <map-property name="close" class="java.math.BigDecimal"/>
+      <map-property name="volume" class="java.math.BigDecimal"/>
+    </java-util-map>
+  </event-type>
+</esper-configuration>

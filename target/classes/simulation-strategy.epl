@@ -1,0 +1,42 @@
+module simulationStrategy;
+
+@Name('MARKET_DATA')
+@Subscriber(className='be.stehey.foxy.backtester.model.SimulationStrategy$MarketDataEventSubscriber')
+select * from MarketDataEvent;
+
+//@Name('SIGNAL_DATA')
+//@Subscriber(className='be.stehey.foxy.backtester.model.SimulationPortfolio$SignalEventSubscriber')
+//select * from SignalEvent;
+
+// Moving Average using of esper built in functions
+@Name('MOVING_AVERAGE')
+@Subscriber(className='be.stehey.foxy.backtester.model.SimulationStrategy$Ema5EventSubscriber')
+insert into Indicator
+select stat1.average - stat2.average as value
+from MarketDataEvent.win:length(fastEMA).stat:uni(close) as stat1, 
+MarketDataEvent.win:length(slowEMA).stat:uni(close) as stat2
+where stat2.datapoints = slowEMA;
+
+@Name('OPEN_POSITION')
+@Subscriber(className='be.stehey.foxy.backtester.model.SimulationStrategy$OpenPositionSubscriber')
+select
+indexTick.time as timestamp,
+indexTick.close as underlayingSpot,
+indicator.value as indicatorValue 
+from pattern [every (indexTick=MarketDataEvent -> indicator=Indicator)] 
+where indicator.value > 0.0003
+and prior(1, indicator.value) > 0.0003
+and prior(2, indicator.value) > 0.0003
+and prior(3, indicator.value) > 0.0002
+and prior(4, indicator.value) > 0.0001
+and prior(5, indicator.value) <= 0;
+
+@Name('CLOSE_POSITION')
+@Subscriber(className='be.stehey.foxy.backtester.model.SimulationStrategy$ClosePositionSubscriber')
+select
+indexTick.time as timestamp,
+indexTick.close as underlayingSpot,
+indicator.value as indicatorValue 
+from pattern [every (indexTick=MarketDataEvent -> indicator=Indicator)] 
+where indicator.value <= 0;
+//and prior(1, indicator.value) >= 0;
